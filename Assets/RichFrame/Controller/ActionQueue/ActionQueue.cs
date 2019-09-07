@@ -14,23 +14,41 @@ public class ActionQueue : MonoBehaviour
     {
         return new GameObject().AddComponent<ActionQueue>();
     }
-
-    public ActionQueue AddAction(Action action, Func<bool> IsCompleted)
+    /// <summary>
+    /// 添加一个方法到队列
+    /// </summary>
+    /// <param name="startAction">开始时执行的方法</param>
+    /// <param name="IsCompleted">判断该节点是否完成</param>
+    /// <returns></returns>
+    public ActionQueue AddAction(Action startAction, Func<bool> IsCompleted)
     {
-        actions.Add(new OneAction(action, IsCompleted));
+        actions.Add(new OneAction(startAction, IsCompleted));
         return this;
     }
     /// <summary>
-    /// 绑定当完成时回调函数
+    /// 添加一个协程方法到队列
     /// </summary>
-    /// <param name="callback">回调方法</param>
+    /// <param name="enumerator">一个协程</param>
+    /// <returns></returns>
+    public ActionQueue AddAction(IEnumerator enumerator)
+    {
+        actions.Add(new OneAction(enumerator));
+        return this;
+    }
+    /// <summary>
+    /// 绑定执行完毕回调
+    /// </summary>
+    /// <param name="callback"></param>
     /// <returns></returns>
     public ActionQueue BindCallback(Action callback)
     {
         onComplete += callback;
         return this;
     }
-
+    /// <summary>
+    /// 开始执行队列
+    /// </summary>
+    /// <returns></returns>
     public ActionQueue StartQueue()
     {
         StartCoroutine(StartQueueAsync());
@@ -41,21 +59,25 @@ public class ActionQueue : MonoBehaviour
     {
         if (actions.Count > 0)
         {
-            actions[0].action();
+            if (actions[0].startAction != null)
+            {
+                actions[0].startAction();
+            }
         }
         while (actions.Count > 0)
         {
-            if (actions[0].IsCompleted())
+            yield return actions[0].enumerator;
+            actions.RemoveAt(0);
+            if (actions.Count > 0)
             {
-                actions.RemoveAt(0);
-                if (actions.Count > 0)
+                if (actions[0].startAction != null)
                 {
-                    actions[0].action();
+                    actions[0].startAction();
                 }
-                else
-                {
-                    break;
-                }
+            }
+            else
+            {
+                break;
             }
             yield return new WaitForEndOfFrame();
         }
@@ -68,12 +90,39 @@ public class ActionQueue : MonoBehaviour
 
     class OneAction
     {
-        public Action action;
-        public Func<bool> IsCompleted;
-        public OneAction(Action action, Func<bool> IsCompleted)
+        public Action startAction;
+        public IEnumerator enumerator;
+        public OneAction(Action startAction, Func<bool> IsCompleted)
         {
-            this.action = action;
-            this.IsCompleted = IsCompleted;
+            this.startAction = startAction;
+            //如果没用协程，自己创建一个协程
+            enumerator = new CustomEnumerator(IsCompleted);
+        }
+
+        public OneAction(IEnumerator enumerator, Action action = null)
+        {
+            this.startAction = action;
+            this.enumerator = enumerator;
+        }
+        /// <summary>
+        /// 自定义的协程
+        /// </summary>
+        class CustomEnumerator : IEnumerator
+        {
+            public object Current => null;
+            Func<bool> IsCompleted;
+            public CustomEnumerator(Func<bool> IsCompleted)
+            {
+                this.IsCompleted = IsCompleted;
+            }
+            public bool MoveNext()
+            {
+                return !IsCompleted();
+            }
+
+            public void Reset()
+            {
+            }
         }
     }
 }
