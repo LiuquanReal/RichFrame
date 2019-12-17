@@ -36,6 +36,17 @@ public class ActionQueue : MonoBehaviour
         return this;
     }
     /// <summary>
+    /// 添加一个方法到队列
+    /// </summary>
+    /// <param name="action">一个方法</param>
+    /// <returns></returns>
+    public ActionQueue AddAction(Action action)
+    {
+        actions.Add(new OneAction(action));
+        return this;
+    }
+
+    /// <summary>
     /// 绑定执行完毕回调
     /// </summary>
     /// <param name="callback"></param>
@@ -104,6 +115,13 @@ public class ActionQueue : MonoBehaviour
             this.startAction = action;
             this.enumerator = enumerator;
         }
+
+        public OneAction(Action action)
+        {
+            this.startAction = action;
+            this.enumerator = null;
+        }
+
         /// <summary>
         /// 自定义的协程
         /// </summary>
