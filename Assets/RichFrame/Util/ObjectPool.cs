@@ -1,19 +1,31 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.Events;
 
 /// <summary>
 /// 对象池
 /// </summary>
 /// <typeparam name="T"></typeparam>
-public class ObjectPool<T> where T : MonoBehaviour
+public class ObjectPool<T> where T : Object
 {
     List<T> activedObjects = new List<T>();
     List<T> objectsPool = new List<T>();
     T prefab;
-    public ObjectPool(T prefab)
+    UnityAction<T> onTakeOutOneObject;
+    UnityAction<T> onPutInOneObject;
+
+    /// <summary>
+    /// 
+    /// </summary>
+    /// <param name="prefab">用于实例化的预设体</param>
+    /// <param name="onTakeOutOneObj">拿出一个实例的回调</param>
+    /// <param name="onPutInOneObj">放入一个实例的回调</param>
+    public ObjectPool(T prefab, UnityAction<T> onTakeOutOneObj = null, UnityAction<T> onPutInOneObj = null)
     {
         this.prefab = prefab;
+        this.onTakeOutOneObject = onTakeOutOneObj;
+        this.onPutInOneObject = onPutInOneObj;
     }
     /// <summary>
     /// 拿出一个对象
@@ -40,8 +52,11 @@ public class ObjectPool<T> where T : MonoBehaviour
         {
             obj = InstantiateObject(parent);
         }
-        obj.gameObject.SetActive(true);
         activedObjects.Add(obj);
+        if (onTakeOutOneObject != null)
+        {
+            onTakeOutOneObject(obj);
+        }
         return obj;
     }
     public void PutInObject(T obj)
@@ -49,22 +64,23 @@ public class ObjectPool<T> where T : MonoBehaviour
         if (activedObjects.Contains(obj))
         {
             activedObjects.Remove(obj);
-            obj.gameObject.SetActive(false);
             objectsPool.Add(obj);
+            if (onPutInOneObject != null)
+            {
+                onPutInOneObject(obj);
+            }
         }
     }
     public void ClearAllActivedObjects()
     {
-        foreach (var item in activedObjects)
+        while (activedObjects.Count > 0)
         {
-            item.gameObject.SetActive(false);
+            PutInObject(activedObjects[0]);
         }
-        objectsPool.AddRange(activedObjects);
-        activedObjects.Clear();
     }
-    public List<T> GetActivedObjects()
+    public T[] GetActivedObjects()
     {
-        return activedObjects;
+        return activedObjects.ToArray();
     }
     T InstantiateObject(Transform parent)
     {

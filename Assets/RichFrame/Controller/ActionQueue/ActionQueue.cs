@@ -4,7 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 
 /// <summary>
-/// 方法执行队列
+/// 任务执行队列
 /// </summary>
 public class ActionQueue : MonoBehaviour
 {
@@ -15,7 +15,7 @@ public class ActionQueue : MonoBehaviour
         return new GameObject().AddComponent<ActionQueue>();
     }
     /// <summary>
-    /// 添加一个方法到队列
+    /// 添加一个任务到队列
     /// </summary>
     /// <param name="startAction">开始时执行的方法</param>
     /// <param name="IsCompleted">判断该节点是否完成</param>
@@ -36,7 +36,7 @@ public class ActionQueue : MonoBehaviour
         return this;
     }
     /// <summary>
-    /// 添加一个方法到队列
+    /// 添加一个任务到队列
     /// </summary>
     /// <param name="action">一个方法</param>
     /// <returns></returns>
